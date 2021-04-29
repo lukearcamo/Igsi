@@ -17,6 +17,7 @@ TODO:
 Later on add option for the other types of shaders, maybe using templates --- Geometry shader supported since 3.2, tesselation since 4.0 or lower versions with ARB_tessellation_shader
 Use GL data types
 Add support for other vbo/uniform data types
+Shader preprocessing?
 */
 
 namespace Igsi {
@@ -66,7 +67,7 @@ namespace Igsi {
     }
 
     GLuint createVBO(GLint location, std::vector<GLfloat> &buffer, GLint itemSize, GLboolean normalized=GL_FALSE, GLenum usage=GL_STATIC_DRAW) {
-        GLuint VBO; // Is this ok to use or does it need to be passed as param?
+        GLuint VBO;
         glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(GLfloat), buffer.data(), usage);
