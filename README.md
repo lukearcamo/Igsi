@@ -9,6 +9,7 @@ Why did you make this? There are other libr— Because I wanted to stay true to 
 ..- This library is *not* object-oriented; more freedom for you to do other stuff, with other OpenGL objects
 - Classes for just vec3, vec4, and mat4 (it's meant to be kinda like glsl, but with no swizzling because I don't have enough braincells to figure that out)
 - A scene graph system, which does not use any OpenGL, so it's up to you what to do with all the matrices
+- Functions to generate and modify geometry data in C++ vectors
 
 ## Missing features:
 - Creating OpenGL contexts or windows — Use other libraries like GLFW
