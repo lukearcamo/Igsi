@@ -12,6 +12,7 @@
 /*
 TODO:
 Add cylinder/cone or other types of geometry
+Add LatheGeometry like in THREE.js?
 Perhaps perform these functions on the actual opengl buffer rather than a vector?
 */
 
@@ -123,7 +124,8 @@ namespace Igsi {
 			}
 		}
     }
-    // Credit to THREE.js BoxGeometry
+    // Adapted from BoxGeometry in THREE.js library
+    // https://github.com/mrdoob/three.js/blob/master/src/geometries/BoxGeometry.js
     void boxGeometry(std::vector<float> &vertices, std::vector<float> &normals, std::vector<float> &uvs, std::vector<unsigned int> &indices, vec3 dims=vec3(1), vec3 segments=vec3(1)) {
         vec3 halfDims = dims / 2;
 
@@ -196,10 +198,9 @@ namespace Igsi {
 		face(0, 1, 2, -1, -1, vec3(halfDims.x, halfDims.y, -halfDims.z)); // nz
     }
 
-    // void LatheGeometry(std::vector<float> &vertices, std::vector<float> &normals, std::vector<float> &uvs, std::vector<unsigned int> &indices, std::vector<vec2> points) {
-
-    // }
-    // Based on Song Ho's article on OpenGL Spheres and THREE.js SphereBufferGeometry (But without phi/theta start/length)
+    // Adapted from Song Ho's article on OpenGL Spheres and SphereGeometry in THREE.js library
+    // http://www.songho.ca/opengl/gl_sphere.html
+    // https://github.com/mrdoob/three.js/blob/master/src/geometries/SphereGeometry.js
     void sphereGeometry(std::vector<float> &vertices, std::vector<float> &normals, std::vector<float> &uvs, std::vector<unsigned int> &indices, float radius=1.0, vec2 segments=vec2(8, 6)) {
         int pastSize = vertices.size() / 3;
 
