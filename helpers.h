@@ -141,7 +141,7 @@ namespace Igsi {
     void setUniform(const GLchar* name, mat4 value) { glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram(), name), 1, value.isRowMajor, value.elements); }
 
     // Must have a texture currently bound
-    void setTexParams(GLenum target, GLenum minFilter=GL_LINEAR, GLenum magFilter=GL_LINEAR, GLenum wrapS=GL_CLAMP_TO_EDGE, GLenum wrapT=GL_CLAMP_TO_EDGE, GLenum wrapR=NULL) {
+    void setTexParams(GLenum target, GLenum minFilter=GL_LINEAR, GLenum magFilter=GL_LINEAR, GLenum wrapS=GL_CLAMP_TO_EDGE, GLenum wrapT=GL_CLAMP_TO_EDGE, GLenum wrapR=GL_ZERO) { // use GL_ZERO rather than NULL since it is a GLenum but still evaluates to zero for the if statement
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minFilter);
         glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magFilter);
         glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
