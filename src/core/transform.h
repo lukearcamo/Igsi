@@ -1,42 +1,43 @@
-#ifndef IGSI_OBJ_H
-#define IGSI_OBJ_H
+#ifndef IGSI_TRANSFORM_H
+#define IGSI_TRANSFORM_H
 
 #include <iostream>
 #include <vector>
 #include <algorithm>
 
 #include "mathematics.h"
+#include "helpers.h"
 
 namespace Igsi {
-    class Object3D {
+    class Transform {
     public:
         mat4 matrix;
-        mat4 matrixWorld;
-        mat4 matrixWorldInverse; // Normally not used except for cameras and b) worldToLocal() method
+        mat4 worldMatrix;
+        mat4 inverseWorldMatrix;
         mat4 normalMatrix;
 
-        std::vector<Object3D*> children;
-        Object3D* parent = nullptr;
+        std::vector<Transform*> children;
+        Transform* parent = nullptr;
 
         vec3 position;
         vec3 rotation;
-        EulerOrder rotationOrder = XYZ;
+        const char* rotationOrder = "XYZ";
         vec3 scale = vec3(1);
 
         bool dynamic = true;
 
-        ~Object3D() {
+        ~Transform() {
             clear();
             if (parent) parent->remove(this);
         }
 
-        Object3D& add(Object3D* child) {
+        Transform& add(Transform* child) {
             if (child == this) {
-                std::cerr << "Object3D.add: Object3D cannot be child of itself" << std::endl;
+                std::cerr << "Transform::add: Transform cannot be child of itself" << std::endl;
                 return *this;
             }
             if (child->parent == this) {
-                std::cerr << "Object3D.add: Already child of Object3D" << std::endl;
+                std::cerr << "Transform::add: Already child of Transform" << std::endl;
                 return *this;
             }
             children.push_back(child);
@@ -44,8 +45,8 @@ namespace Igsi {
             child->parent = this;
             return *this;
         }
-        Object3D& remove(Object3D* child) {
-            std::vector<Object3D*>::iterator idx = std::find(children.begin(), children.end(), child);
+        Transform& remove(Transform* child) {
+            std::vector<Transform*>::iterator idx = std::find(children.begin(), children.end(), child);
             if (idx != children.end()) {
                 child->parent = nullptr;
                 children.erase(idx);
@@ -53,7 +54,7 @@ namespace Igsi {
             return *this;
         }
         void clear() {
-            std::vector<Object3D*>::iterator ptr;
+            std::vector<Transform*>::iterator ptr;
             for (ptr = children.begin(); ptr < children.end(); ptr++) {
                 (*ptr)->parent = nullptr;
             }
@@ -65,18 +66,18 @@ namespace Igsi {
             matrix *= mat4().rotationEuler(rotation, rotationOrder);
             matrix.setTranslation(position);
 
-            if (parent) matrixWorld = matrix * parent->matrixWorld;
-            else matrixWorld = matrix;
+            if (parent) worldMatrix = matrix * parent->worldMatrix;
+            else worldMatrix = matrix;
 
-            matrixWorldInverse = matrixWorld;
-            matrixWorldInverse.invert();
+            inverseWorldMatrix = worldMatrix;
+            inverseWorldMatrix.invert();
             
-            normalMatrix = matrixWorldInverse;
+            normalMatrix = inverseWorldMatrix;
             normalMatrix.transpose();
         }
         void updateChildrenMatrices() {
             if (dynamic) updateMatrices();
-            std::vector<Object3D*>::iterator ptr;
+            std::vector<Transform*>::iterator ptr;
             for (ptr = children.begin(); ptr < children.end(); ptr++) {
                 (*ptr)->updateChildrenMatrices();
             }
@@ -84,23 +85,31 @@ namespace Igsi {
 
         vec4 localToWorld(vec4 a) {
             if (dynamic) updateMatrices();
-            return matrixWorld * a;
+            return worldMatrix * a;
         }
         vec4 worldToLocal(vec4 a) {
             if (dynamic) updateMatrices();
-            return matrixWorldInverse * a;
+            return inverseWorldMatrix * a;
         }
         vec3 getWorldPosition() {
             if (dynamic) updateMatrices();
-            return vec3(matrixWorld.elements[12], matrixWorld.elements[13], matrixWorld.elements[14]);
+            return vec3(worldMatrix.elements[12], worldMatrix.elements[13], worldMatrix.elements[14]);
         }
         virtual vec3 getWorldDirection() { // https://community.khronos.org/t/get-direction-from-transformation-matrix-or-quat/65502/2
             if (dynamic) updateMatrices();
             return vec3(
-                matrixWorld.elements[8],
-                matrixWorld.elements[9],
-                matrixWorld.elements[10]
+                worldMatrix.elements[8],
+                worldMatrix.elements[9],
+                worldMatrix.elements[10]
             );
+        }
+
+        void setDefaultUniforms(Transform* camera, mat4 projectionMatrix) {
+            setUniform("projectionMatrix", projectionMatrix);
+            setUniform("worldMatrix", worldMatrix);
+            setUniform("normalMatrix", normalMatrix);
+            setUniform("viewMatrix", camera->inverseWorldMatrix);
+            setUniform("cameraPosition", camera->position);
         }
     };
 }
