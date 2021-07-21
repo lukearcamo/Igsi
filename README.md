@@ -1,20 +1,18 @@
 # Igsi
-A rudimentary C++ OpenGL library, remotely based off of THREE.js
+A rudimentary C++ OpenGL library, inspired by Three.js, OGL.js, and TWGL.js
 
-In my native tongue, *igsi* means "short" or "shortness", and I named it that not only because this library is tiny & very lightweight, but also that's exactly what this library is supposed to help with: shortening OpenGL code and making it less verbose (meaning this is *not* an OpenGL abstraction). I also named it that because it's my library and I can do what I want :)
-Why did you make this? There are other libr— Because I wanted to stay true to the original low-level OpenGL so I didn't want to use any abstraction libraries, and also coding practice, and also because I can, and also because I usually make things harder for myself
+In my native tongue, igsi means "short" or "shortness", and this is the philosophy behind this library. It is that it is meant to make code less verbose by shortening various common interactions with OpenGL, while still giving you the freedom to do it yourself (due to the lack of heavy abstraction). src/helpers.h is used for interacting with OpenGL, and everything else is merely a container for data, accompanied by various functions for manipulating this data. Despite there being other libraries, I made this because I wanted a library that wasn't too far abstracted from the original low-level OpenGL, and also because this project was kind of like coding practice, helping me better understand OpenGL.
 
 ## This library consists of:
 - Helpers for creating & managing OpenGL objects
-..- This library is *not* object-oriented; more freedom for you to do other stuff, with other OpenGL objects
-- Classes for just vec3, vec4, and mat4 (it's meant to be kinda like glsl, but with no swizzling because I don't have enough braincells to figure that out)
-- A scene graph system, which does not use any OpenGL, so it's up to you what to do with all the matrices
-- Functions to generate and modify geometry data in C++ vectors
+- Classes for just vec3, vec4, and mat4 (meant to be used kinda like in glsl, but with no swizzling because I don't have enough braincells to figure that out)
+- A simple scene graph system
+- Simple geometry data generation & transformation
 
 ## Missing features:
 - Creating OpenGL contexts or windows — Use other libraries like GLFW
-- Loading images to use for textures — Use other libraries like stb_image or lodepng
-- Many of the functions that deal with VBOs and uniforms only support floats, I plan on changing those later, but just think, when was the last time you used a bvec4?
-- On a similar note, there are some todo comments at the top of the header files, check them to see what missing features there are
+- Loading images to use for textures — Use other libraries like stb_image or lodepng (I did include picopng, but see the note at the top of the pico_load.h file)
+- Mostly only supports float data type for the math classes, attributes, uniforms, etc. I plan on changing this later but this is a big change. Some may still not be supported (just think, when was the last time you used a uniform bvec4?)
+- There are todo comments at the top of some files, check them to see what missing features there are because I'm probably forgetting some here
 
-As of right now, there is no documentation, but the code should be intuitive so feel free to explore it, modify it for your project, etc. Maybe if this gets larger I will write documentation, and maybe some examples.
+As of right now, there is no documentation, but the code should be fairly intuitive so feel free to explore it, modify it for your project, etc. Maybe if this gets larger I'll write some.
