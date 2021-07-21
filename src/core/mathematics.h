@@ -1,18 +1,15 @@
 #ifndef IGSI_MATH_H
 #define IGSI_MATH_H
 
-#include "include\glad.h"
-
 #include <iostream>
 #include <cmath>
 
 /*
 TODO:
-Add modulus operator overload
-Add more vector functions beyond floor()
-Use GL types?
+Add modulus operator overload?
+Add more math functions that support vectors, beyond just floor()
+Use OpenGL data types, and add support for more data types beyond floats
 Swizzling?
-Syntax like vec3(some_vector_4), which is equal to some_vector_4.xyz ??
 */
 
 namespace Igsi {
@@ -169,7 +166,7 @@ namespace Igsi {
     vec3 floor(vec3 a) { return vec3(std::floor(a.x), std::floor(a.y), std::floor(a.z)); }
     vec4 floor(vec4 a) { return vec4(std::floor(a.x), std::floor(a.y), std::floor(a.z), std::floor(a.w)); }
 
-    enum EulerOrder { XYZ, XZY, YXZ, YZX, ZXY, ZYX };
+    // enum EulerOrder { XYZ, XZY, YXZ, YZX, ZXY, ZYX };
 
     class mat4 {
     public:
@@ -179,7 +176,8 @@ namespace Igsi {
             0, 0, 1, 0,
             0, 0, 0, 1
         };
-        GLboolean isRowMajor = GL_FALSE;
+        // GLboolean isRowMajor = GL_FALSE;
+        bool isRowMajor = false;
         mat4() {}
         mat4(float a0, float a1, float a2, float a3, float a4, float a5, float a6, float a7, float a8, float a9, float a10, float a11, float a12, float a13, float a14, float a15) {
             set(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
@@ -254,7 +252,7 @@ namespace Igsi {
             return *this;
         }
 
-        // For debugging purposes
+        // For debugging
         void print() {
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
@@ -295,15 +293,13 @@ namespace Igsi {
                 0, 0, 0, 1
             );
         }
-        mat4 &rotationEuler(vec3 radians, EulerOrder order) {
-            switch (order) {
-                case XZY: return rotationX(radians.x) *= mat4().rotationZ(radians.z) *= mat4().rotationY(radians.y);
-                case YXZ: return rotationY(radians.y) *= mat4().rotationX(radians.x) *= mat4().rotationZ(radians.z);
-                case YZX: return rotationY(radians.y) *= mat4().rotationZ(radians.z) *= mat4().rotationX(radians.x);
-                case ZXY: return rotationZ(radians.z) *= mat4().rotationX(radians.x) *= mat4().rotationY(radians.y);
-                case ZYX: return rotationZ(radians.z) *= mat4().rotationY(radians.y) *= mat4().rotationX(radians.x);
-                default: return rotationX(radians.x) *= mat4().rotationY(radians.y) *= mat4().rotationZ(radians.z); // XYZ is default
-            }
+        mat4 &rotationEuler(vec3 radians, const char* order) {
+            if (order == "XZY") return rotationX(radians.x) *= mat4().rotationZ(radians.z) *= mat4().rotationY(radians.y);
+            if (order == "YXZ") return rotationY(radians.y) *= mat4().rotationX(radians.x) *= mat4().rotationZ(radians.z);
+            if (order == "YZX") return rotationY(radians.y) *= mat4().rotationZ(radians.z) *= mat4().rotationX(radians.x);
+            if (order == "ZXY") return rotationZ(radians.z) *= mat4().rotationX(radians.x) *= mat4().rotationY(radians.y);
+            if (order == "ZYX") return rotationZ(radians.z) *= mat4().rotationY(radians.y) *= mat4().rotationX(radians.x);
+            return rotationX(radians.x) *= mat4().rotationY(radians.y) *= mat4().rotationZ(radians.z); // Dafault
         }
         mat4 &orthographic(float left, float right, float bottom, float top, float near, float far) {
             float w = 1 / (right - left);
@@ -317,7 +313,7 @@ namespace Igsi {
             );
         }
         // Adapted from https://webglfundamentals.org/webgl/lessons/webgl-3d-perspective.html
-        mat4 &perspective(float fov, float aspect, float near, float far) { // fov is in radians
+        mat4 &perspective(float fov, float aspect, float near, float far) { // fov is vertical fov in radians
             float d = 1.0 / std::tan(fov / 2.0);
             float r = 1.0 / (near - far);
             return set(
