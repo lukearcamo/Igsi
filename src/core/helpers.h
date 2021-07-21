@@ -1,7 +1,8 @@
 #ifndef IGSI_HELPERS_H
 #define IGSI_HELPERS_H
 
-#include "..\..\include\glad.h"
+// Replace this with whatever loader you are using
+// #include "..\..\include\glad.h"
 
 #include <iostream>
 #include <fstream>
