@@ -33,7 +33,7 @@ namespace Igsi {
             for (auto it = attributes.begin(); it != attributes.end(); ++it) {
                 deleteAttribute(it->first);
             }
-        };
+        }
 
         // If attribute name already exists, addAttribute will not add another one
         
@@ -45,15 +45,15 @@ namespace Igsi {
         //         itemSizes[key] = itemSize;
         //     }
         //     return attributes.at(key);
-        // };
+        // }
         std::vector<float> &addAttribute(const char* key, int itemSize) {
             itemSizes[key] = itemSize;
             return attributes.emplace(key, std::vector<float>()).first->second;
-        };
+        }
 
         std::vector<float> &getAttribute(const char* key) {
             return attributes.at(key);
-        };
+        }
 
         // Does this really deallocate memory?
         void deleteAttribute(const char* key) {
@@ -62,7 +62,7 @@ namespace Igsi {
             std::vector<float>().swap(attributes.at(key));
             attributes.erase(key);
             itemSizes.erase(key);
-        };
+        }
         int getDrawCount() {
             int idcs = indices.size();
             return idcs > 0 ? idcs : attributes.at("position").size();
