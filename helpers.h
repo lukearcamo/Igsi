@@ -1,8 +1,7 @@
 #ifndef IGSI_HELPERS_H
 #define IGSI_HELPERS_H
 
-#include "include\glad.h"
-#include "include\glfw3.h"
+#include "..\..\include\glad.h"
 
 #include <iostream>
 #include <fstream>
@@ -11,13 +10,12 @@
 #include <vector>
 
 #include "mathematics.h"
+#include "geometry.h"
 
 /*
 TODO:
-Later on add option for the other types of shaders, maybe using templates --- Geometry shader supported since 3.2, tesselation since 4.0 or lower versions with ARB_tessellation_shader
 Use GL data types
-Add support for other vbo/uniform data types
-Shader preprocessing?
+Add support for other attribute & uniform data types
 */
 
 namespace Igsi {
@@ -45,15 +43,45 @@ namespace Igsi {
         }
         return shader;
     }
-    GLuint createShaderProgram(GLuint* shaders, int numShaders) {
+
+    // GLuint createShaderProgram(GLuint* shaders, int numShaders) {
+    //     GLuint shaderProgram = glCreateProgram();
+    //     for (int i = 0; i < numShaders; i++) {
+    //         glAttachShader(shaderProgram, shaders[i]);
+    //     }
+    //     glLinkProgram(shaderProgram);
+    //     for (int i = 0; i < numShaders; i++) {
+    //         glDeleteShader(shaders[i]);
+    //     }
+
+    //     GLint success, logSize;
+    //     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    //     if (!success) {
+    //         glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logSize);
+    //         GLchar infoLog[logSize];
+    //         glGetProgramInfoLog(shaderProgram, logSize, NULL, infoLog);
+    //         std::cerr << "Shader program linking failed: " << infoLog << std::endl;
+    //     }
+    //     return shaderProgram;
+    // }
+    GLuint createShaderProgram(const char* vsPath, const char* fsPath, const char* gsPath = NULL) {
         GLuint shaderProgram = glCreateProgram();
-        for (int i = 0; i < numShaders; i++) {
-            glAttachShader(shaderProgram, shaders[i]);
+
+        GLuint vs = compileShader(GL_VERTEX_SHADER, vsPath);
+        glAttachShader(shaderProgram, vs);
+        GLuint fs = compileShader(GL_FRAGMENT_SHADER, fsPath);
+        glAttachShader(shaderProgram, fs);
+        GLuint gs;
+        if (gsPath) {
+            gs = compileShader(GL_GEOMETRY_SHADER, gsPath);
+            glAttachShader(shaderProgram, gs);
         }
+
         glLinkProgram(shaderProgram);
-        for (int i = 0; i < numShaders; i++) {
-            glDeleteShader(shaders[i]);
-        }
+        
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        if (gsPath) glDeleteShader(gs);
 
         GLint success, logSize;
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
@@ -63,18 +91,31 @@ namespace Igsi {
             glGetProgramInfoLog(shaderProgram, logSize, NULL, infoLog);
             std::cerr << "Shader program linking failed: " << infoLog << std::endl;
         }
+
+        glUseProgram(shaderProgram);
         return shaderProgram;
     }
 
-    GLuint createVBO(GLint location, std::vector<GLfloat> &buffer, GLint itemSize, GLboolean normalized=GL_FALSE, GLenum usage=GL_STATIC_DRAW) {
+    // GLuint createVBO(GLint location, std::vector<GLfloat> &buffer, GLint itemSize, GLboolean normalized=GL_FALSE, GLenum usage=GL_STATIC_DRAW) {
+    //     GLuint VBO;
+    //     glGenBuffers(1, &VBO);
+    //     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //         glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(GLfloat), buffer.data(), usage);
+    //         glVertexAttribPointer(location, itemSize, GL_FLOAT, normalized, 0, (void*)0);
+    //         glEnableVertexAttribArray(location);
+    //     return VBO;
+    // }
+    GLuint createVBO(GLint location, Geometry* geometry, const char* key, GLenum usage=GL_STATIC_DRAW, GLsizei stride=0, const void* pointer=(void*)0) {
+        std::vector<GLfloat> &buffer = geometry->getAttribute(key);
         GLuint VBO;
         glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(GLfloat), buffer.data(), usage);
-            glVertexAttribPointer(location, itemSize, GL_FLOAT, normalized, 0, (void*)0);
+            glVertexAttribPointer(location, geometry->itemSizes.at(key), GL_FLOAT, false, stride, pointer); // Normalized irrelevant for floats
             glEnableVertexAttribArray(location);
         return VBO;
     }
+
     GLuint createEBO(std::vector<GLuint> &buffer, GLenum usage=GL_STATIC_DRAW) {
         GLuint EBO;
         glGenBuffers(1, &EBO);
@@ -139,6 +180,11 @@ namespace Igsi {
     void setUniform(const GLchar* name, vec3 value) { glUniform3f(glGetUniformLocation(currentShaderProgram(), name), value.x, value.y, value.z); }
     void setUniform(const GLchar* name, vec4 value) { glUniform4f(glGetUniformLocation(currentShaderProgram(), name), value.x, value.y, value.z, value.w); }
     void setUniform(const GLchar* name, mat4 value) { glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram(), name), 1, value.isRowMajor, value.elements); }
+
+    void activateTexture(GLuint texture, GLenum target, unsigned int unit=0) {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(target, texture);
+    }
 
     // Must have a texture currently bound
     void setTexParams(GLenum target, GLenum minFilter=GL_LINEAR, GLenum magFilter=GL_LINEAR, GLenum wrapS=GL_CLAMP_TO_EDGE, GLenum wrapT=GL_CLAMP_TO_EDGE, GLenum wrapR=GL_ZERO) { // use GL_ZERO rather than NULL since it is a GLenum but still evaluates to zero for the if statement
