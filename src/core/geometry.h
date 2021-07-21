@@ -1,88 +1,149 @@
 #ifndef IGSI_GEOMETRY_H
 #define IGSI_GEOMETRY_H
 
-#include <iostream>
 #include <vector>
-#include <algorithm>
 #include <map>
 #include <cmath>
-
 #include "mathematics.h"
 
 /*
 TODO:
 Add cylinder/cone or other types of geometry
 Add LatheGeometry like in THREE.js?
-Perhaps perform these functions on the actual opengl buffer rather than a vector?
+Perhaps perform geometry functions on the actual opengl buffer rather than a vector?
+Add support for other attribute data types, like int, uint, and bool
 */
 
 namespace Igsi {
-    void nonIndexed(std::vector<float> &buffer, std::vector<unsigned int> &indices, int itemSize) {
-        std::vector<float> newBuffer;
-        newBuffer.reserve(indices.size() * itemSize);
-        for (int i = 0; i < indices.size(); i++) {
-            int idx = indices[i] * itemSize;
-            for (int j = 0; j < itemSize; j++) {
-                newBuffer.push_back(buffer.at(idx + j)); // .at throws exception if OOB
-            }
-        }
-        buffer.swap(newBuffer);
-    }
-
-    // Note that this doesnt multiply idx by 3 first, so it assumes that idx is an array position, not the index of the vector
     void setXYZ(std::vector<float> &buffer, int idx, vec3 value) {
-        buffer[idx] = value.x;
-        buffer[idx + 1] = value.y;
-        buffer[idx + 2] = value.z;
+        buffer.at(idx) = value.x;
+        buffer.at(idx + 1) = value.y;
+        buffer.at(idx + 2) = value.z;
     }
     vec3 getXYZ(std::vector<float> &buffer, int idx) {
-        return vec3(buffer[idx], buffer[idx + 1], buffer[idx + 2]);
+        return vec3(buffer.at(idx), buffer.at(idx + 1), buffer.at(idx + 2));
     }
-    void transform(mat4 matrix, std::vector<float> &vertices, std::vector<float> &normals) {
-        mat4 normalMatrix = matrix;
-        normalMatrix.invert().transpose(); // assumes that elements 3, 7, and 11 are 0, which should be true if using the regular matrix transformations defined in matrix class
-        for (int i = 0; i < vertices.size(); i += 3) {
-            vec4 pos = matrix * vec4(getXYZ(vertices, i), 1);
-            vec4 nml = normalMatrix * vec4(getXYZ(normals, i), 0);
-            setXYZ(vertices, i, vec3(pos.x, pos.y, pos.z));
-            setXYZ(normals, i, vec3(nml.x, nml.y, nml.z));
-        }
-    }
-    void computeNormals(std::vector<float> &vertices, std::vector<float> &normals) {
-        normals.assign(vertices.size(), 0);
-        for (int i = 0; i < vertices.size(); i += 9) { // Iterates thru triangles, not points
-            vec3 pA = getXYZ(vertices, i);
-            vec3 pB = getXYZ(vertices, i + 3);
-            vec3 pC = getXYZ(vertices, i + 6);
-            vec3 nml = normalize(cross(pC - pB, pA - pB));
-            setXYZ(normals, i, nml);
-            setXYZ(normals, i + 3, nml);
-            setXYZ(normals, i + 6, nml);
-        }
-    }
-    void computeNormals(std::vector<float> &vertices, std::vector<float> &normals, std::vector<unsigned int> &indices) {
-        normals.assign(vertices.size(), 0);
-        for (int i = 0; i < indices.size(); i += 3) { // Iterates thru triangles, not points
-            vec3 index = vec3(indices[i], indices[i + 1], indices[i + 2]);
-            index *= 3;
-            vec3 pA = getXYZ(vertices, index.x);
-            vec3 pB = getXYZ(vertices, index.y);
-            vec3 pC = getXYZ(vertices, index.z);
-            vec3 nml = cross(pC - pB, pA - pB);
-            setXYZ(normals, index.x, getXYZ(normals, index.x) + nml);
-            setXYZ(normals, index.y, getXYZ(normals, index.y) + nml);
-            setXYZ(normals, index.z, getXYZ(normals, index.z) + nml);
-        }
-        for (int i = 0; i < normals.size(); i += 3) {
-            setXYZ(normals, i, normalize(getXYZ(normals, i)));
-        }
-    }
+    class Geometry {
+    public:
+        std::map<const char*, std::vector<float>> attributes;
+        std::map<const char*, int> itemSizes;
+        std::vector<unsigned int> indices;
 
-    void planeGeometry(std::vector<float> &vertices, std::vector<float> &normals, std::vector<float> &uvs, std::vector<unsigned int> &indices, vec2 dims=vec2(1), vec2 segments=vec2(1)) {
+        ~Geometry() {
+            for (auto it = attributes.begin(); it != attributes.end(); ++it) {
+                deleteAttribute(it->first);
+            }
+        };
+
+        // If attribute name already exists, addAttribute will not add another one
+        
+        // std::vector<float> &addAttribute(const char* key, int itemSize) {
+        //     auto it = attributes.find(key);
+        //     if (it == attributes.end()) {
+        //         std::vector<float> buffer; // Will this remain after function end? I think so?
+        //         attributes[key] = buffer;
+        //         itemSizes[key] = itemSize;
+        //     }
+        //     return attributes.at(key);
+        // };
+        std::vector<float> &addAttribute(const char* key, int itemSize) {
+            itemSizes[key] = itemSize;
+            return attributes.emplace(key, std::vector<float>()).first->second;
+        };
+
+        std::vector<float> &getAttribute(const char* key) {
+            return attributes.at(key);
+        };
+
+        // Does this really deallocate memory?
+        void deleteAttribute(const char* key) {
+            // attributes.at(key).clear();
+            // attributes.at(key).shrink_to_fit();
+            std::vector<float>().swap(attributes.at(key));
+            attributes.erase(key);
+            itemSizes.erase(key);
+        };
+        int getDrawCount() {
+            int idcs = indices.size();
+            return idcs > 0 ? idcs : attributes.at("position").size();
+        }
+        void toNonIndexed() {
+            for (auto it = attributes.begin(); it != attributes.end(); ++it) {
+                int itemSize = itemSizes.at(it->first);
+                std::vector<float> newBuffer;
+                newBuffer.reserve(indices.size() * itemSize);
+
+                for (int i = 0; i < indices.size(); i++) {
+                    int idx = indices.at(i) * itemSize;
+                    for (int j = 0; j < itemSize; j++) {
+                        newBuffer.push_back(it->second.at(idx + j));
+                    }
+                }
+                it->second.swap(newBuffer);
+            }
+            // indices.clear();
+            // indices.shrink_to_fit();
+            std::vector<unsigned int>().swap(indices);
+        }
+        void transform(mat4 matrix) {
+            std::vector<float> &vertices = addAttribute("position", 3);
+            std::vector<float> &normals = addAttribute("normal", 3);
+
+            mat4 normalMatrix = matrix;
+            normalMatrix.invert().transpose(); // assumes that elements 3, 7, and 11 are 0, which should be true if using the regular matrix transformations defined in matrix class
+            for (int i = 0; i < vertices.size(); i += 3) {
+                vec4 pos = matrix * vec4(getXYZ(vertices, i), 1);
+                vec4 nml = normalMatrix * vec4(getXYZ(normals, i), 0);
+                setXYZ(vertices, i, vec3(pos.x, pos.y, pos.z));
+                setXYZ(normals, i, vec3(nml.x, nml.y, nml.z));
+            }
+        }
+        void computeNormals() {
+            std::vector<float> &vertices = addAttribute("position", 3);
+            std::vector<float> &normals = addAttribute("normal", 3);
+
+            normals.assign(vertices.size(), 0);
+
+            if (indices.size() == 0) {
+                for (int i = 0; i < vertices.size(); i += 9) { // Iterates through triangles, not vertices
+                    vec3 pA = getXYZ(vertices, i);
+                    vec3 pB = getXYZ(vertices, i + 3);
+                    vec3 pC = getXYZ(vertices, i + 6);
+                    vec3 nml = normalize(cross(pC - pB, pA - pB));
+                    setXYZ(normals, i, nml);
+                    setXYZ(normals, i + 3, nml);
+                    setXYZ(normals, i + 6, nml);
+                }
+            }
+            else {
+                for (int i = 0; i < indices.size(); i += 3) { // Iterates through triangles, not vertices
+                    vec3 index = vec3(indices.at(i), indices.at(i + 1), indices.at(i + 2));
+                    index *= 3;
+                    vec3 pA = getXYZ(vertices, index.x);
+                    vec3 pB = getXYZ(vertices, index.y);
+                    vec3 pC = getXYZ(vertices, index.z);
+                    vec3 nml = cross(pC - pB, pA - pB);
+                    setXYZ(normals, index.x, getXYZ(normals, index.x) + nml);
+                    setXYZ(normals, index.y, getXYZ(normals, index.y) + nml);
+                    setXYZ(normals, index.z, getXYZ(normals, index.z) + nml);
+                }
+                for (int i = 0; i < normals.size(); i += 3) {
+                    setXYZ(normals, i, normalize(getXYZ(normals, i)));
+                }
+            }
+        }
+    };
+
+    void planeGeometry(Geometry* geometry, vec2 dims=vec2(1), vec2 segments=vec2(1)) {
         vec2 halfDims = dims / 2;
 		vec2 grid = floor(segments);
 		vec2 grid1 = grid + 1;
 		vec2 segmentSize = dims / grid;
+
+        std::vector<float> &vertices = geometry->addAttribute("position", 3);
+        std::vector<float> &normals = geometry->addAttribute("normal", 3);
+        std::vector<float> &uvs = geometry->addAttribute("uv", 2);
+        std::vector<unsigned int> &indices = geometry->indices;
         
         int numVerts = grid1.x * grid1.y;
         int numIdcs = grid.x * grid.y * 6;
@@ -126,8 +187,13 @@ namespace Igsi {
     }
     // Adapted from BoxGeometry in THREE.js library
     // https://github.com/mrdoob/three.js/blob/master/src/geometries/BoxGeometry.js
-    void boxGeometry(std::vector<float> &vertices, std::vector<float> &normals, std::vector<float> &uvs, std::vector<unsigned int> &indices, vec3 dims=vec3(1), vec3 segments=vec3(1)) {
+    void boxGeometry(Geometry* geometry, vec3 dims=vec3(1), vec3 segments=vec3(1)) {
         vec3 halfDims = dims / 2;
+
+        std::vector<float> &vertices = geometry->addAttribute("position", 3);
+        std::vector<float> &normals = geometry->addAttribute("normal", 3);
+        std::vector<float> &uvs = geometry->addAttribute("uv", 2);
+        std::vector<unsigned int> &indices = geometry->indices;
 
         int pastSize = vertices.size() / 3;
 
@@ -201,7 +267,12 @@ namespace Igsi {
     // Adapted from Song Ho's article on OpenGL Spheres and SphereGeometry in THREE.js library
     // http://www.songho.ca/opengl/gl_sphere.html
     // https://github.com/mrdoob/three.js/blob/master/src/geometries/SphereGeometry.js
-    void sphereGeometry(std::vector<float> &vertices, std::vector<float> &normals, std::vector<float> &uvs, std::vector<unsigned int> &indices, float radius=1.0, vec2 segments=vec2(8, 6)) {
+    void sphereGeometry(Geometry* geometry, float radius=1.0, vec2 segments=vec2(8, 6)) {
+        std::vector<float> &vertices = geometry->addAttribute("position", 3);
+        std::vector<float> &normals = geometry->addAttribute("normal", 3);
+        std::vector<float> &uvs = geometry->addAttribute("uv", 2);
+        std::vector<unsigned int> &indices = geometry->indices;
+        
         int pastSize = vertices.size() / 3;
 
         // knowing my math, these numbers may not be correct lol but its fine bc vector will not throw an error it'll just reallocate mem
