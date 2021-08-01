@@ -7,19 +7,18 @@
 #define GLFW_INCLUDE_NONE // Just to be sure
 #include "include\glfw3.h"
 
-#include "igsi\core\mathematics.h"
+#include "igsi\core\vec2.h"
+#include "igsi\core\vec3.h"
+#include "igsi\core\vec4.h"
 #include "igsi\core\transform.h"
 #include "igsi\core\helpers.h"
 #include "igsi\core\geometry.h"
 #include "igsi\extra\controls.h"
 #include "igsi\extra\pico_load.h"
 
-using namespace Igsi;
+#define PI 3.14159265358979323846 // I didnt want to include the whole cmath header
 
-/*
-IDEAS:
-- Make generated geometries / nonIndexed return drawCount?
-*/
+using namespace Igsi;
 
 namespace demo {
     GLFWwindow* window;
@@ -47,7 +46,7 @@ namespace demo {
             std::cerr << "GLAD initialization failed\n";
             return -1;
         }
-        glfwMakeContextCurrent(NULL); // Will set context on the other thread
+        glfwMakeContextCurrent(NULL); // Gonna set context on the other thread
         return 0;
     }
     void render() {
@@ -67,7 +66,7 @@ namespace demo {
         camera.position.z = 5;
         // camera.updateMatrices();
         scene.add(&camera);
-        mat4 projectionMatrix = mat4().perspective(45 * toRadians, width / height, 0.1, 1000);
+        mat4 projectionMatrix = mat4().perspective(45.0 * PI / 180.0, width / height, 0.1, 1000);
 
         glfwSetKeyCallback(window, Controls::keyEvent);
         glfwSetMouseButtonCallback(window, Controls::mouseEvent);
@@ -110,6 +109,7 @@ namespace demo {
 
         Geometry skyboxGeo;
         boxGeometry(&skyboxGeo);
+        // std::cout << "VERTS222: " << &skyboxGeo.attributes.at("position") << std::endl;
         int skyboxDrawCount = skyboxGeo.getDrawCount();
         GLuint skyboxVAO = createVAO();
             createVBO(0, &skyboxGeo, "position");
@@ -134,6 +134,7 @@ namespace demo {
             createVBO(0, &sphereGeo, "position");
             createVBO(1, &sphereGeo, "normal");
             createVBO(2, &sphereGeo, "uv");
+            // createEBO(sphereGeo.indices);
         
         Transform sphere;
         scene.add(&sphere);
@@ -150,7 +151,7 @@ namespace demo {
 
         Geometry planeGeo;
         planeGeometry(&planeGeo, vec2(1000, 1000));
-        planeGeo.transform(mat4().rotationX(M_PI / -2.0));
+        planeGeo.transform(mat4().rotationX(PI / -2.0));
         int planeDrawCount = planeGeo.getDrawCount();
         GLuint planeVAO = createVAO();
             createVBO(0, &planeGeo, "position");
@@ -172,7 +173,7 @@ namespace demo {
 
             if (hasResized) { // Opengl commands dont work in glfw callbacks? Also kinda hard to access cam object from callbacks
                 glViewport(0, 0, width, height);
-                projectionMatrix.perspective(45 * toRadians, width / height, 0.1, 1000);
+                projectionMatrix.perspective(45 * PI / 180.0, width / height, 0.1, 1000);
                 hasResized = false;
             }
 
@@ -186,12 +187,14 @@ namespace demo {
             glCullFace(GL_BACK);
             
             glUseProgram(sphereProgram);
+            // currentShaderProgram = sphereProgram;
             glBindVertexArray(sphereVAO);
             sphere.setDefaultUniforms(&camera, projectionMatrix);
             // glDrawElements(GL_TRIANGLES, sphereDrawCount, GL_UNSIGNED_INT, NULL);
             glDrawArrays(GL_TRIANGLES, 0, sphereDrawCount);
 
             glUseProgram(planeProgram);
+            // currentShaderProgram = planeProgram;
             plane.setDefaultUniforms(&camera, projectionMatrix);
             setUniform("time", now);
             glBindVertexArray(planeVAO);
@@ -200,8 +203,12 @@ namespace demo {
             // If not using EBO
             glDrawElements(GL_TRIANGLES, planeDrawCount, GL_UNSIGNED_INT, planeGeo.indices.data());
 
+            // Have a helpers draw function where u pass in the geometry itself and it will take care of everything??? NOOO that removes customizability of draw count, use ebo or not, etc.
+
+
             glCullFace(GL_FRONT);
             glUseProgram(skyboxProgram);
+            // currentShaderProgram = skyboxProgram;
             skybox.setDefaultUniforms(&camera, projectionMatrix);
             glBindVertexArray(skyboxVAO);
             glDrawElements(GL_TRIANGLES, skyboxDrawCount, GL_UNSIGNED_INT, NULL);
@@ -221,3 +228,27 @@ int main() {
     return 0;
 }
 // g++ -o example2.exe example2.cpp include\glad.c -L. -lglfw3
+
+/*
+https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html
+Include-paths specified by -Idir. Since the header's filename is known from the #include, the compiler only needs the directories.
+Library-paths specified via -Ldir option. In addition, you also have to specify the library name. In Windows, use -lxxx.lib.
+
+-o example2.exe
+example2.cpp
+include\glad.c
+igsi\core\geometry.cpp
+igsi\core\helpers.cpp
+igsi\core\mat4.cpp
+igsi\core\transform.cpp
+igsi\core\vec2.cpp
+igsi\core\vec3.cpp
+igsi\core\vec4.cpp
+igsi\extra\controls.cpp
+igsi\extra\pico_load.cpp
+-L.
+-lglfw3
+
+g++ -o example.exe example.cpp include\glad.c igsi\core\geometry.cpp igsi\core\helpers.cpp igsi\core\mat4.cpp igsi\core\transform.cpp igsi\core\vec2.cpp igsi\core\vec3.cpp igsi\core\vec4.cpp igsi\extra\controls.cpp igsi\extra\pico_load.cpp -L. -lglfw3
+
+*/
