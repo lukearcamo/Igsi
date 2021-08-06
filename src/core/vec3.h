@@ -40,7 +40,7 @@ namespace Igsi {
         float &operator [] (int i);
     };
     
-    float dot(vec3 a);
+    float dot(vec3 a, vec3 b);
     vec3 floor(vec3 a);
     vec3 abs(vec3 a);
 

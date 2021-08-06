@@ -38,10 +38,10 @@ namespace Igsi {
         return i ? y : x;
     }
     
-    float dot(vec2 a) { return a.x * a.x + a.y * a.y; }
+    float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }
     vec2 floor(vec2 a) { return vec2(std::floor(a.x), std::floor(a.y)); }
     vec2 abs(vec2 a) { return vec2(std::fabs(a.x), std::fabs(a.y)); }
-    float length(vec2 a) { return std::sqrt(dot(a)); }
+    float length(vec2 a) { return std::sqrt(dot(a, a)); }
     vec2 normalize(vec2 a) { // To prevent divide by zero, if len = 0 return vec of 0
         float len = length(a);
         return len != 0.0 ? a / len : a;

@@ -40,10 +40,10 @@ namespace Igsi {
         else return z;
     }
     
-    float dot(vec3 a) { return a.x * a.x + a.y * a.y + a.z * a.z; }
+    float dot(vec3 a, vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
     vec3 floor(vec3 a) { return vec3(std::floor(a.x), std::floor(a.y), std::floor(a.z)); }
     vec3 abs(vec3 a) { return vec3(std::fabs(a.x), std::fabs(a.y), std::fabs(a.z)); }
-    float length(vec3 a) { return std::sqrt(dot(a)); }
+    float length(vec3 a) { return std::sqrt(dot(a, a)); }
     vec3 normalize(vec3 a) { // To prevent divide by zero, if len = 0 return vec of 0
         float len = length(a);
         return len != 0.0 ? a / len : a;
