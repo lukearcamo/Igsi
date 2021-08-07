@@ -4,7 +4,7 @@
 
 namespace Igsi {
     vec2::vec2(float a) { x = a; y = a; }
-    vec2::vec2(float x, float y) { this->x = x; this->y = y; }
+    vec2::vec2(float ax, float ay) { x = ax; y = ay; }
 
     vec2& vec2::operator = (float a) { x = a; y = a; return *this; }
     vec2& vec2::operator = (vec2 a) { x = a.x; y = a.y; return *this; }

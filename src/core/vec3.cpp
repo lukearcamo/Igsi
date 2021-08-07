@@ -4,7 +4,7 @@
 
 namespace Igsi {
     vec3::vec3(float a) { x = a; y = a; z = a; }
-    vec3::vec3(float nx, float ny, float nz) { x = nx; y = ny; z = nz; }
+    vec3::vec3(float ax, float ay, float az) { x = ax; y = ay; z = az; }
 
     vec3 & vec3::operator = (float a) { x = a; y = a; z = a; return *this; }
     vec3 & vec3::operator = (vec3 a) { x = a.x; y = a.y; z = a.z; return *this; }

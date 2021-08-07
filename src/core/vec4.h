@@ -6,8 +6,8 @@ namespace Igsi {
     public:
         float x, y, z, w;
 
-        vec4(float a = 0);
-        vec4(float nx, float ny, float nz, float nw);
+        vec4(float a = 0.0f);
+        vec4(float ax, float ay, float az, float aw);
 
         vec4& operator = (float a);
         vec4& operator = (vec4 a);

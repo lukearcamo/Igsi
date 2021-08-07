@@ -4,7 +4,7 @@
 
 namespace Igsi {
     vec4::vec4(float a) { x = a; y = a; z = a; w = a; }
-    vec4::vec4(float nx, float ny, float nz, float nw) { x = nx; y = ny; z = nz; w = nw; }
+    vec4::vec4(float ax, float ay, float az, float aw) { x = ax; y = ay; z = az; w = aw; }
 
     vec4& vec4::operator = (float a) { x = a; y = a; z = a; w = a; return *this; }
     vec4& vec4::operator = (vec4 a) { x = a.x; y = a.y; z = a.z; w = a.w; return *this; }
