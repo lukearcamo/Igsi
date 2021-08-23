@@ -1,10 +1,10 @@
-#define GLFW_DLL
+// #define GLFW_DLL
 #define GLFW_INCLUDE_NONE // Just to be sure
-#include "..\..\include\glfw3.h"
+#include <GLFW/glfw3.h>
 
-#include "..\core\vec2.h"
-#include "..\core\vec3.h"
-#include "..\core\transform.h"
+#include "../core/vec2.h"
+#include "../core/vec3.h"
+#include "../core/transform.h"
 
 #include <cmath>
 
