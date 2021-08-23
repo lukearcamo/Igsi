@@ -1,6 +1,8 @@
 #ifndef IGSI_MAT4_H
 #define IGSI_MAT4_H
 
+#include <ostream>
+
 namespace Igsi {
     class vec3;
     class vec4;
@@ -13,8 +15,6 @@ namespace Igsi {
             0, 0, 1, 0,
             0, 0, 0, 1
         };
-        // GLboolean isRowMajor = GL_FALSE;
-        bool isRowMajor = false;
 
         // Note: this transposes the input because OpenGL uses column-major ordering
         mat4& set(float a0, float a1, float a2, float a3,
@@ -38,9 +38,6 @@ namespace Igsi {
         mat4& setScale(vec3 a);
         mat4& scale(float x, float y, float z);
         mat4& scale(vec3 a);
-
-        // For debugging
-        // void print();
 
         mat4& lookAt(vec3 origin, vec3 target, vec3 up);
 
@@ -81,6 +78,8 @@ namespace Igsi {
         mat4 operator * (mat4 a);
         mat4& operator *= (mat4 a);
     };
+
+    std::ostream &operator << (std::ostream &os, const mat4 &a);
 }
 
 #endif

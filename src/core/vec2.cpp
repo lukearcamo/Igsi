@@ -1,5 +1,6 @@
 #include "vec2.h"
 
+#include <ostream>
 #include <cmath>
 
 namespace Igsi {
@@ -36,6 +37,10 @@ namespace Igsi {
 
     float& vec2::operator [] (int i) {
         return i ? y : x;
+    }
+
+    std::ostream &operator << (std::ostream &os, const vec2 &a) {
+        return os << a.x << ", " << a.y;
     }
     
     float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }

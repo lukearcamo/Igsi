@@ -1,13 +1,13 @@
 #include "pico_load.h"
 #include "picopng.h"
-#include "..\core\vec2.h"
+#include "../core/vec2.h"
 
 #include <vector>
 #include <iostream>
 #include <fstream>
 
 // DO NOT USE PICOPNG IN A SERIOUS PROJECT
-// I only used picopng because it's tiny
+// I only used picopng because it's simple and tiny
 // According to https://lodev.org/lodepng/, which is where I got it from,
 // it is "less well maintained than LodePNG, has less features, and may be less efficient."
 

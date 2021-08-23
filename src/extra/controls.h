@@ -1,17 +1,16 @@
 #ifndef CONTROLS_H
 #define CONTROLS_H
 
-#define GLFW_DLL
+// #define GLFW_DLL
 #define GLFW_INCLUDE_NONE // Just to be sure
-#include "..\..\include\glfw3.h"
-
-#include "..\core\vec2.h"
-#include "..\core\vec3.h"
-#include "..\core\transform.h"
+#include <GLFW/glfw3.h>
 
 #include <iostream>
 
 namespace Igsi {
+    class vec2;
+    class Transform;
+
     namespace Controls {
         vec2 getMousePos(GLFWwindow* window);
         

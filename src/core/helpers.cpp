@@ -1,6 +1,6 @@
-// This header needs access to OpenGL definitions
+// Needs access to OpenGL definitions
 // Replace this with whatever loader you are using
-#include "..\..\include\glad.h"
+#include <glad/gl.h>
 
 #include "helpers.h"
 
@@ -17,52 +17,55 @@
 #include <vector>
 
 namespace Igsi {
-    GLuint compileShader(GLenum shaderType, std::string path) {
+    std::string readFile(std::string path) {
         std::ifstream file(path);
         std::stringstream buffer;
         buffer << file.rdbuf();
-        std::string code = buffer.str();
-        // Can do shader preprocessing here
-        const char* source = code.c_str();
         file.close();
-
+        return buffer.str();
+    }
+    GLuint compileShader(GLenum shaderType, const char* source) {
         GLuint shader = glCreateShader(shaderType);
         glShaderSource(shader, 1, &source, NULL);
         glCompileShader(shader);
 
-        GLint success, logSize;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
+        GLint compileStatus, logSize;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
+        if (!compileStatus) {
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
             GLchar infoLog[logSize];
             glGetShaderInfoLog(shader, logSize, NULL, infoLog);
-            std::cerr << "Shader compilation failed: " << infoLog << std::endl;
-            std::cerr << source << std::endl;
+            if (shaderType == GL_VERTEX_SHADER) std::cerr << "Vertex";
+            else if (shaderType == GL_FRAGMENT_SHADER) std::cerr << "Fragment";
+            else if (shaderType == GL_GEOMETRY_SHADER) std::cerr << "Geometry";
+            std::cerr << " shader compilation failed: " << infoLog << std::endl;
         }
+
         return shader;
     }
-    GLuint createShaderProgram(std::string vsPath, std::string fsPath, std::string gsPath) {
+    GLuint createShaderProgram(std::string vsSource, std::string fsSource, std::string gsSource) {
         GLuint shaderProgram = glCreateProgram();
 
-        GLuint vs = compileShader(GL_VERTEX_SHADER, vsPath);
+        GLuint vs = compileShader(GL_VERTEX_SHADER, vsSource.c_str());
         glAttachShader(shaderProgram, vs);
-        GLuint fs = compileShader(GL_FRAGMENT_SHADER, fsPath);
+
+        GLuint fs = compileShader(GL_FRAGMENT_SHADER, fsSource.c_str());
         glAttachShader(shaderProgram, fs);
-        GLuint gs;
-        if (!gsPath.empty()) {
-            gs = compileShader(GL_GEOMETRY_SHADER, gsPath);
+
+        GLuint gs = 0;
+        if (!gsSource.empty()) {
+            gs = compileShader(GL_GEOMETRY_SHADER, fsSource.c_str());
             glAttachShader(shaderProgram, gs);
         }
 
         glLinkProgram(shaderProgram);
-        
         glDeleteShader(vs);
         glDeleteShader(fs);
-        if (!gsPath.empty()) glDeleteShader(gs);
+        if (gs != 0) glDeleteShader(gs);
 
-        GLint success, logSize;
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-        if (!success) {
+        GLint linkStatus, logSize;
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
+        if (!linkStatus) {
             glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logSize);
             GLchar infoLog[logSize];
             glGetProgramInfoLog(shaderProgram, logSize, NULL, infoLog);
@@ -70,21 +73,38 @@ namespace Igsi {
         }
 
         glUseProgram(shaderProgram);
-        // currentShaderProgram = shaderProgram;
-        // useProgram(shaderProgram);
         return shaderProgram;
     }
     
-    GLuint createVBO(GLint location, Geometry* geometry, std::string key, GLenum usage, GLsizei stride, const void* pointer) {
+    GLuint createVBO(GLint location, Geometry* geometry, std::string key, GLsizei stride, GLsizeiptr offset, GLenum usage) {
         std::vector<GLfloat> &buffer = geometry->getAttribute(key);
         GLuint VBO;
         glGenBuffers(1, &VBO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(GLfloat), buffer.data(), usage);
-            glVertexAttribPointer(location, geometry->itemSizes.at(key), GL_FLOAT, false, stride, pointer); // Normalized irrelevant for floats
+            glVertexAttribPointer(location, geometry->itemSizes.at(key), GL_FLOAT, false, stride, (void*)offset); // Normalized irrelevant for floats
             glEnableVertexAttribArray(location);
         return VBO;
     }
+    GLuint createVBO(GLint location, void* data, GLsizeiptr bytes, GLint itemSize, GLenum type, GLboolean normalized, GLsizei stride, GLsizeiptr offset, GLenum usage) {
+        GLuint VBO;
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, bytes, data, usage);
+            glVertexAttribPointer(location, itemSize, type, normalized, stride, (void*)offset);
+            glEnableVertexAttribArray(location);
+        return VBO;
+    }
+    // GLuint createVBO(GLint location, std::vector<GLfloat> buffer, GLint itemSize, GLenum type, GLsizei stride, int offset, GLenum usage) {
+    //     GLuint VBO;
+    //     glGenBuffers(1, &VBO);
+    //     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //         glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(GLfloat), buffer.data(), usage);
+    //         glVertexAttribPointer(location, itemSize, GL_FLOAT, GL_FALSE, stride, (void*)(offset * sizeof(GLfloat)));
+    //         glEnableVertexAttribArray(location);
+    //     return VBO;
+    // }
+
     GLuint createEBO(std::vector<GLuint> &buffer, GLenum usage) {
         GLuint EBO;
         glGenBuffers(1, &EBO);
@@ -98,9 +118,10 @@ namespace Igsi {
         glBindVertexArray(VAO);
         return VAO;
     }
-    GLuint createTexture(GLenum target) {
+    GLuint createTexture(GLenum target, unsigned int unit) {
         GLuint tex;
         glGenTextures(1, &tex);
+        glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(target, tex);
         return tex;
     }
@@ -161,13 +182,8 @@ namespace Igsi {
     void setUniform(const GLchar* name, vec4 value, GLuint program) {
         glUniform4f(glGetUniformLocation(program ? program : getCurrentShaderProgram(), name), value.x, value.y, value.z, value.w);
     }
-    void setUniform(const GLchar* name, mat4 value, GLuint program) {
-        glUniformMatrix4fv(glGetUniformLocation(program ? program : getCurrentShaderProgram(), name), 1, value.isRowMajor, value.elements);
-    }
-
-    void activateTexture(GLuint texture, GLenum target, unsigned int unit) {
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(target, texture);
+    void setUniform(const GLchar* name, mat4 value, GLuint program, GLboolean transpose) {
+        glUniformMatrix4fv(glGetUniformLocation(program ? program : getCurrentShaderProgram(), name), 1, transpose, value.elements);
     }
 
     // Must have a texture currently bound

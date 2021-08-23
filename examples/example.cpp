@@ -1,22 +1,25 @@
+#include <glad/gl.h>
+// #define GLFW_DLL
+#define GLFW_INCLUDE_NONE // Just to be sure
+#include <GLFW/glfw3.h>
+
+#include "dependencies/igsi/core/vec2.h"
+#include "dependencies/igsi/core/vec3.h"
+#include "dependencies/igsi/core/mat4.h"
+#include "dependencies/igsi/core/transform.h"
+#include "dependencies/igsi/core/helpers.h"
+#include "dependencies/igsi/core/geometry.h"
+
+#include "dependencies/igsi/extra/controls.h"
+#include "dependencies/igsi/extra/pico_load.h"
+#include "dependencies/igsi/extra/skybox.h"
+
 #include <iostream>
 #include <thread>
 #include <vector>
 
-#include "include\glad.h"
-#define GLFW_DLL
-#define GLFW_INCLUDE_NONE // Just to be sure
-#include "include\glfw3.h"
-
-#include "igsi\core\vec2.h"
-#include "igsi\core\vec3.h"
-#include "igsi\core\vec4.h"
-#include "igsi\core\transform.h"
-#include "igsi\core\helpers.h"
-#include "igsi\core\geometry.h"
-#include "igsi\extra\controls.h"
-#include "igsi\extra\pico_load.h"
-
-#define PI 3.14159265358979323846 // I didnt want to include the whole cmath header
+#define PI 3.14159265358979323846 // I didnt want to include the whole cmath header just for one value
+#define TO_RADIANS PI / 180.0
 
 using namespace Igsi;
 
@@ -42,11 +45,12 @@ namespace demo {
             return -1;
         }
         glfwMakeContextCurrent(window); // GLAD requires active context
-        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        // if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        if (!gladLoadGL(glfwGetProcAddress)) {
             std::cerr << "GLAD initialization failed\n";
             return -1;
         }
-        glfwMakeContextCurrent(NULL); // Gonna set context on the other thread
+        glfwMakeContextCurrent(NULL); // Will set context on the other thread
         return 0;
     }
     void render() {
@@ -66,61 +70,27 @@ namespace demo {
         camera.position.z = 5;
         // camera.updateMatrices();
         scene.add(&camera);
-        mat4 projectionMatrix = mat4().perspective(45.0 * PI / 180.0, width / height, 0.1, 1000);
+        mat4 projectionMatrix = mat4().perspective(45 * TO_RADIANS, width / height, 0.1, 1000);
 
         glfwSetKeyCallback(window, Controls::keyEvent);
         glfwSetMouseButtonCallback(window, Controls::mouseEvent);
         glfwSetWindowFocusCallback(window, Controls::focusEvent);
 
-        // ======= Load Cubemap =======
-        
-        GLuint skyboxTex = createTexture(GL_TEXTURE_CUBE_MAP);
-        setTexParams(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-        std::vector<GLubyte> cubemapFaces[6];
-        const char* facePaths[6] = {
-            "./textures/sky/sunset/px.png",
-            "./textures/sky/sunset/nx.png",
-            "./textures/sky/sunset/py.png",
-            "./textures/sky/sunset/ny.png",
-            "./textures/sky/sunset/pz.png",
-            "./textures/sky/sunset/nz.png"
-        };
-        for (int i = 0; i < 6; i++) {
-            vec2 dims = loadImage(cubemapFaces[i], facePaths[i]);
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, cubemapFaces[i].data());
-        }
-        activateTexture(skyboxTex, GL_TEXTURE_CUBE_MAP, 0);
-
         // ======= Load Water Normal Map =======
         
-        GLuint normalMap = createTexture(GL_TEXTURE_2D);
+        GLuint normalMap = createTexture(GL_TEXTURE_2D, 1);
         setTexParams(GL_TEXTURE_2D, GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT);
         std::vector<GLubyte> normalMapData;
         vec2 dims = loadImage(normalMapData, "./textures/waterNormalMap.png");
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalMapData.data());
-        activateTexture(normalMap, GL_TEXTURE_2D, 1);
 
         // ======= Skybox =======
 
-        glDepthFunc(GL_LEQUAL); // So skybox can use depth buffer properly
-
-        GLuint skyboxProgram = createShaderProgram("./shaders/skybox/vs.glsl", "./shaders/skybox/fs.glsl");
-        setUniformInt("map", 0);
-
-        Geometry skyboxGeo;
-        boxGeometry(&skyboxGeo);
-        // std::cout << "VERTS222: " << &skyboxGeo.attributes.at("position") << std::endl;
-        int skyboxDrawCount = skyboxGeo.getDrawCount();
-        GLuint skyboxVAO = createVAO();
-            createVBO(0, &skyboxGeo, "position");
-            createEBO(skyboxGeo.indices);
-        
-        Transform skybox;
-        scene.add(&skybox);
+        Skybox skybox(0, "./textures/sky/sunset/");
 
         // ======= Sphere =======
 
-        GLuint sphereProgram = createShaderProgram("./shaders/sphere/vs.glsl", "./shaders/sphere/fs.glsl");
+        GLuint sphereProgram = createShaderProgram(readFile("./shaders/sphere/vs.glsl"), readFile("./shaders/sphere/fs.glsl"));
         setUniform("color", vec3(1, 0, 0));
         setUniformInt("envMap", 0);
 
@@ -134,14 +104,13 @@ namespace demo {
             createVBO(0, &sphereGeo, "position");
             createVBO(1, &sphereGeo, "normal");
             createVBO(2, &sphereGeo, "uv");
-            // createEBO(sphereGeo.indices);
         
         Transform sphere;
         scene.add(&sphere);
 
         // ======= Plane =======
 
-        GLuint planeProgram = createShaderProgram("./shaders/plane/vs.glsl", "./shaders/plane/fs.glsl");
+        GLuint planeProgram = createShaderProgram(readFile("./shaders/plane/vs.glsl"), readFile("./shaders/plane/fs.glsl"));
         // setUniform("color", vec3(0.0, 30.0, 15.0) / 255);
         setUniformInt("envMap", 0);
         setUniformInt("normalMap", 1);
@@ -173,7 +142,7 @@ namespace demo {
 
             if (hasResized) { // Opengl commands dont work in glfw callbacks? Also kinda hard to access cam object from callbacks
                 glViewport(0, 0, width, height);
-                projectionMatrix.perspective(45 * PI / 180.0, width / height, 0.1, 1000);
+                projectionMatrix.perspective(45 * TO_RADIANS, width / height, 0.1, 1000);
                 hasResized = false;
             }
 
@@ -184,17 +153,13 @@ namespace demo {
             glClearColor(0.25, 0.25, 0.25, 1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glCullFace(GL_BACK);
-            
             glUseProgram(sphereProgram);
-            // currentShaderProgram = sphereProgram;
             glBindVertexArray(sphereVAO);
             sphere.setDefaultUniforms(&camera, projectionMatrix);
             // glDrawElements(GL_TRIANGLES, sphereDrawCount, GL_UNSIGNED_INT, NULL);
             glDrawArrays(GL_TRIANGLES, 0, sphereDrawCount);
 
             glUseProgram(planeProgram);
-            // currentShaderProgram = planeProgram;
             plane.setDefaultUniforms(&camera, projectionMatrix);
             setUniform("time", now);
             glBindVertexArray(planeVAO);
@@ -203,15 +168,7 @@ namespace demo {
             // If not using EBO
             glDrawElements(GL_TRIANGLES, planeDrawCount, GL_UNSIGNED_INT, planeGeo.indices.data());
 
-            // Have a helpers draw function where u pass in the geometry itself and it will take care of everything??? NOOO that removes customizability of draw count, use ebo or not, etc.
-
-
-            glCullFace(GL_FRONT);
-            glUseProgram(skyboxProgram);
-            // currentShaderProgram = skyboxProgram;
-            skybox.setDefaultUniforms(&camera, projectionMatrix);
-            glBindVertexArray(skyboxVAO);
-            glDrawElements(GL_TRIANGLES, skyboxDrawCount, GL_UNSIGNED_INT, NULL);
+            skybox.draw(&camera, projectionMatrix);
 
             glfwSwapBuffers(window);
         }
@@ -227,28 +184,3 @@ int main() {
     glfwTerminate();
     return 0;
 }
-// g++ -o example2.exe example2.cpp include\glad.c -L. -lglfw3
-
-/*
-https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html
-Include-paths specified by -Idir. Since the header's filename is known from the #include, the compiler only needs the directories.
-Library-paths specified via -Ldir option. In addition, you also have to specify the library name. In Windows, use -lxxx.lib.
-
--o example2.exe
-example2.cpp
-include\glad.c
-igsi\core\geometry.cpp
-igsi\core\helpers.cpp
-igsi\core\mat4.cpp
-igsi\core\transform.cpp
-igsi\core\vec2.cpp
-igsi\core\vec3.cpp
-igsi\core\vec4.cpp
-igsi\extra\controls.cpp
-igsi\extra\pico_load.cpp
--L.
--lglfw3
-
-g++ -o example.exe example.cpp include\glad.c igsi\core\geometry.cpp igsi\core\helpers.cpp igsi\core\mat4.cpp igsi\core\transform.cpp igsi\core\vec2.cpp igsi\core\vec3.cpp igsi\core\vec4.cpp igsi\extra\controls.cpp igsi\extra\pico_load.cpp -L. -lglfw3
-
-*/

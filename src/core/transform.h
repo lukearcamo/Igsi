@@ -14,7 +14,6 @@ namespace Igsi {
         mat4 matrix;
         mat4 worldMatrix;
         mat4 inverseWorldMatrix;
-        mat4 normalMatrix;
 
         vec3 position;
         vec3 rotation;
@@ -24,6 +23,7 @@ namespace Igsi {
         std::vector<Transform*> children;
         Transform* parent;
         bool dynamic;
+        bool updateLocalMatrix;
 
         Transform();
         ~Transform();

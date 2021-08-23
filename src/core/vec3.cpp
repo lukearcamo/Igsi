@@ -1,5 +1,6 @@
 #include "vec3.h"
 
+#include <ostream>
 #include <cmath>
 
 namespace Igsi {
@@ -38,6 +39,10 @@ namespace Igsi {
         if (i == 0) return x;
         else if (i == 1) return y;
         else return z;
+    }
+    
+    std::ostream &operator << (std::ostream &os, const vec3 &a) {
+        return os << a.x << ", " << a.y << ", " << a.z;
     }
     
     float dot(vec3 a, vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
