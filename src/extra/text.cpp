@@ -26,7 +26,28 @@ namespace Igsi {
         this->color = color;
         this->textAlign = textAlign;
 
-        shaderProgram = createShaderProgram("./shaders/text/vs.glsl", "./shaders/text/fs.glsl");
+        shaderProgram = createShaderProgram(
+            "#version 330 core\n"
+            "layout (location = 0) in vec2 position;\n"
+            "layout (location = 1) in vec2 uv;\n"
+            "out vec2 vUv;\n"
+            "uniform vec2 scale;\n"
+            "uniform vec2 offset;\n"
+            "void main() {\n"
+            "    vUv = uv;\n"
+            "    gl_Position = vec4(position * scale + offset, 0.0, 1.0);\n"
+            "}",
+            
+            "#version 330 core\n"
+            "in vec2 vUv;\n"
+            "uniform sampler2D map;\n"
+            "uniform vec3 color;\n"
+            "out vec4 fragColor;\n"
+            "void main() {\n"
+            "    float alpha = texture(map, vUv).r;\n"
+            "    fragColor = vec4(color, alpha);\n"
+            "}"
+        );
         
         Geometry geometry;
         std::vector<float> &vertices = geometry.addAttribute("position", 2); // Note that positions are a vec2
