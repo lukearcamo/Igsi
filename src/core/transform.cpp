@@ -13,6 +13,7 @@ namespace Igsi {
         rotationOrder = "XYZ";
         parent = nullptr;
         dynamic = true;
+        updateLocalMatrix = true;
     }
     Transform::~Transform() {
         clear();
@@ -50,18 +51,17 @@ namespace Igsi {
     }
 
     void Transform::updateMatrices() {
-        matrix.scale(scale);
-        matrix *= mat4().rotationEuler(rotation, rotationOrder);
-        matrix.setTranslation(position);
+        if (updateLocalMatrix) {
+            matrix.scale(scale);
+            if (rotation != vec3(0.0)) matrix *= mat4().rotationEuler(rotation, rotationOrder);
+            matrix.setTranslation(position);
+        }
 
         if (parent) worldMatrix = matrix * parent->worldMatrix;
         else worldMatrix = matrix;
 
         inverseWorldMatrix = worldMatrix;
         inverseWorldMatrix.invert();
-        
-        normalMatrix = inverseWorldMatrix;
-        normalMatrix.transpose();
     }
     void Transform::updateChildrenMatrices() {
         if (dynamic) updateMatrices();
@@ -96,7 +96,7 @@ namespace Igsi {
         unsigned int current = getCurrentShaderProgram();
         setUniform("projectionMatrix", projectionMatrix, current);
         setUniform("worldMatrix", worldMatrix, current);
-        setUniform("normalMatrix", normalMatrix, current);
+        setUniform("normalMatrix", inverseWorldMatrix, current, true);
         setUniform("viewMatrix", camera->inverseWorldMatrix, current);
         setUniform("cameraPosition", camera->position, current);
     }

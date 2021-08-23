@@ -3,6 +3,7 @@
 #include "vec3.h"
 #include "vec4.h"
 
+#include <ostream>
 #include <cmath>
 
 namespace Igsi {
@@ -74,18 +75,9 @@ namespace Igsi {
     mat4& mat4::scale(float x, float y, float z) { return identity().setScale(x, y, z); }
     mat4& mat4::scale(vec3 a) { return identity().setScale(a); }
 
-    // For debugging
-    // void mat4::print() {
-    //     for (int i = 0; i < 4; i++) {
-    //         for (int j = 0; j < 4; j++) {
-    //             std::cout << elements[i * 4 + j] << ", ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
-
     mat4& mat4::lookAt(vec3 origin, vec3 target, vec3 up) {
-        vec3 ww = normalize(target - origin);
+        // vec3 ww = normalize(target - origin);
+        vec3 ww = normalize(origin - target);
         vec3 uu = normalize(cross(ww, up));
         vec3 vv = normalize(cross(uu, ww));
         return set(
@@ -229,5 +221,15 @@ namespace Igsi {
     mat4& mat4::operator *= (mat4 a) {
         *this = *this * a;
         return *this;
+    }
+
+    std::ostream &operator << (std::ostream &os, const mat4 &a) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                os << a.elements[i * 4 + j] << ", ";
+            }
+            os << '\n';
+        }
+        return os;
     }
 }

@@ -1,6 +1,8 @@
 #ifndef IGSI_VEC3_H
 #define IGSI_VEC3_H
 
+#include <ostream>
+
 namespace Igsi {
     class vec3 {
     public:
@@ -39,6 +41,8 @@ namespace Igsi {
 
         float &operator [] (int i);
     };
+    
+    std::ostream &operator << (std::ostream &os, const vec3 &a);
     
     float dot(vec3 a, vec3 b);
     vec3 floor(vec3 a);
