@@ -4,17 +4,13 @@
 
 #include "skybox.h"
 
-#include "../core/vec2.h"
 #include "../core/mat4.h"
 #include "../core/helpers.h"
 #include "../core/geometry.h"
 #include "../core/transform.h"
-#include "pico_load.h"
+#include "imageLoader.h"
 
-#include <vector>
 #include <string>
-
-#include <iostream>
 
 namespace Igsi {
     const char* faceImgs[6] = { "px.png", "nx.png", "py.png", "ny.png", "pz.png", "nz.png" };
@@ -22,10 +18,9 @@ namespace Igsi {
     Skybox::Skybox(unsigned int texUnit, std::string path) {
         cubemap = createTexture(GL_TEXTURE_CUBE_MAP, texUnit);
         setTexParams(GL_TEXTURE_CUBE_MAP, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-        std::vector<GLubyte> cubemapFaces[6];
+
         for (int i = 0; i < 6; i++) {
-            vec2 dims = loadImage(cubemapFaces[i], (path + faceImgs[i]).c_str());
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, cubemapFaces[i].data());
+            loadImage((path + faceImgs[i]).c_str(), GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 3);
         }
 
         glDepthFunc(GL_LEQUAL); // So skybox shader can put skybox always at the back of the scene

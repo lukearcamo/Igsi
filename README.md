@@ -11,10 +11,15 @@ In my native tongue, igsi means "short" or "shortness", and this is the philosop
 
 ## Missing/planned features:
 - Creating OpenGL contexts or windows — Use other libraries like GLFW
-- Loading images to use for textures — Use other libraries like stb_image or lodepng (I did include picopng, but *do not use that for serious projects* — see the note at the top of the pico_load.h file)
 - Support for more data types other than floats (for the vectors, attributes, uniforms, etc.), but some I don't really plan on supporting (like the elusive `bvec4`)
 - More math functions for vectors (right now there is only `floor()` and `abs()`)
 - Swizzling vectors
 - More geometry generation functions (cylinder/cone, torus, etc.)
+
+## Dependencies
+- Of course, an OpenGL loading library (GLAD by default, but you can replace the headers within the library to whatever you are using)
+- And these are only if you are using `src/extra` (but really, the functionality is there, you can just adapt it to whatever libraries you are using; I tried to make this library fairly intuitive, enough for modification):
+  - GLFW for controls
+  - stb_image.h for imageLoader and skybox (which uses imageLoader), but 
 
 As of right now, there is no documentation, but the code should be fairly intuitive so feel free to explore it (especially the header files, which give a great overview), or even modify this for your own project, etc. There is an example but it is very messy. Maybe if this gets larger I'll write something.
