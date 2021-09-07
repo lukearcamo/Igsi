@@ -11,7 +11,7 @@
 #include "dependencies/igsi/core/geometry.h"
 
 #include "dependencies/igsi/extra/controls.h"
-#include "dependencies/igsi/extra/pico_load.h"
+#include "dependencies/igsi/extra/imageLoader.h"
 #include "dependencies/igsi/extra/skybox.h"
 
 #include <iostream>
@@ -80,9 +80,7 @@ namespace demo {
         
         GLuint normalMap = createTexture(GL_TEXTURE_2D, 1);
         setTexParams(GL_TEXTURE_2D, GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT);
-        std::vector<GLubyte> normalMapData;
-        vec2 dims = loadImage(normalMapData, "./textures/waterNormalMap.png");
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dims.x, dims.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalMapData.data());
+        loadImage("./textures/waterNormalMap.png", GL_TEXTURE_2D);
 
         // ======= Skybox =======
 
